@@ -1,3 +1,5 @@
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first'); // Force IPv4 — fixes ENETUNREACH on Render
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
