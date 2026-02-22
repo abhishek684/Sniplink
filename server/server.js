@@ -1,8 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { initDatabase, queryOne, runSql } = require('./db');
-
+const { initDatabase, supabase } = require('./db');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -16,7 +15,7 @@ app.use('/api/links', require('./routes/links'));
 app.use('/api/payment', require('./routes/payment'));
 
 // Redirect handler — GET /:shortCode
-app.get('/:shortCode', (req, res) => {
+app.get('/:shortCode', async (req, res) => {
     try {
         const { shortCode } = req.params;
 
@@ -25,7 +24,12 @@ app.get('/:shortCode', (req, res) => {
             return res.status(404).json({ error: 'Not found' });
         }
 
-        const link = queryOne('SELECT * FROM links WHERE short_code = ?', [shortCode]);
+        const { data: link, error } = await supabase.from('links').select('*').eq('short_code', shortCode).maybeSingle();
+
+        if (error) {
+            console.error('Fetch shortlink error:', error);
+            return res.status(500).json({ error: 'Internal server error.' });
+        }
 
         if (!link) {
             return res.status(404).json({ error: 'Short link not found.' });
@@ -41,10 +45,17 @@ app.get('/:shortCode', (req, res) => {
         }
 
         // Record click
-        runSql(
-            'INSERT INTO clicks (link_id, referrer, user_agent, ip_address) VALUES (?, ?, ?, ?)',
-            [link.id, req.headers.referer || '', req.headers['user-agent'] || '', req.ip || '']
-        );
+        try {
+            await supabase.from('clicks').insert({
+                link_id: link.id,
+                referrer: req.headers.referer || '',
+                user_agent: req.headers['user-agent'] || '',
+                ip_address: req.ip || ''
+            });
+        } catch (clickErr) {
+            console.error('Failed to log click:', clickErr);
+            // Don't fail the redirect if logging the click fails
+        }
 
         // Redirect
         res.redirect(302, link.original_url);

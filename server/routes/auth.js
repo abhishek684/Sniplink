@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const { queryOne, queryAll, runSql } = require('../db');
+const { supabase } = require('../db');
 const authenticate = require('../middleware/auth');
 
 const router = express.Router();
@@ -35,7 +35,7 @@ router.post('/send-otp', async (req, res) => {
         }
 
         // Check if user already exists
-        const existing = queryOne('SELECT id FROM users WHERE email = ?', [email]);
+        const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
         if (existing) {
             return res.status(409).json({ error: 'An account with this email already exists.' });
         }
@@ -45,12 +45,7 @@ router.post('/send-otp', async (req, res) => {
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
         // Upsert OTP code
-        const existingOtp = queryOne('SELECT email FROM otp_codes WHERE email = ?', [email]);
-        if (existingOtp) {
-            runSql('UPDATE otp_codes SET code = ?, expires_at = ? WHERE email = ?', [otp, expiresAt, email]);
-        } else {
-            runSql('INSERT INTO otp_codes (email, code, expires_at) VALUES (?, ?, ?)', [email, otp, expiresAt]);
-        }
+        await supabase.from('otp_codes').upsert({ email, code: otp, expires_at: expiresAt }, { onConflict: 'email' });
 
         // Send Email
         const mailOptions = {
@@ -88,7 +83,8 @@ router.post('/signup', async (req, res) => {
         }
 
         // Verify OTP
-        const otpRecord = queryOne('SELECT code, expires_at FROM otp_codes WHERE email = ?', [email]);
+        const { data: otpRecord } = await supabase.from('otp_codes').select('code, expires_at').eq('email', email).maybeSingle();
+
         if (!otpRecord) {
             return res.status(400).json({ error: 'OTP not requested or expired. Please request a new one.' });
         }
@@ -102,7 +98,7 @@ router.post('/signup', async (req, res) => {
         }
 
         // Check again if user exists to prevent race conditions
-        const existing = queryOne('SELECT id FROM users WHERE email = ?', [email]);
+        const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
         if (existing) {
             return res.status(409).json({ error: 'An account with this email already exists.' });
         }
@@ -110,18 +106,19 @@ router.post('/signup', async (req, res) => {
         // Valid OTP — proceed with signup
         const password_hash = await bcrypt.hash(password, 12);
 
-        const result = runSql(
-            'INSERT INTO users (name, email, password_hash, plan) VALUES (?, ?, ?, ?)',
-            [name, email, password_hash, 'free']
-        );
+        const { data: newUser, error: insertError } = await supabase.from('users').insert({
+            name, email, password_hash, plan: 'free'
+        }).select().single();
+
+        if (insertError) throw insertError;
 
         // Delete used OTP
-        runSql('DELETE FROM otp_codes WHERE email = ?', [email]);
+        await supabase.from('otp_codes').delete().eq('email', email);
 
-        const user = { id: result.lastInsertRowid, name, email, plan: 'free' };
-        const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const payload = { id: newUser.id, name: newUser.name, email: newUser.email, plan: newUser.plan };
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-        res.status(201).json({ token, user });
+        res.status(201).json({ token, user: payload });
     } catch (err) {
         console.error('Signup error:', err);
         res.status(500).json({ error: 'Server error during signup.' });
@@ -137,7 +134,7 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required.' });
         }
 
-        const user = queryOne('SELECT * FROM users WHERE email = ?', [email]);
+        const { data: user } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
         if (!user) {
             return res.status(401).json({ error: 'Invalid email or password.' });
         }
@@ -158,19 +155,29 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', authenticate, (req, res) => {
-    const user = queryOne('SELECT id, name, email, plan, created_at FROM users WHERE id = ?', [req.user.id]);
-    if (!user) {
-        return res.status(404).json({ error: 'User not found.' });
+router.get('/me', authenticate, async (req, res) => {
+    try {
+        const { data: user } = await supabase.from('users').select('id, name, email, plan, created_at').eq('id', req.user.id).maybeSingle();
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        res.json({ user });
+    } catch (err) {
+        console.error('Get me error:', err);
+        res.status(500).json({ error: 'Server error.' });
     }
-    res.json({ user });
 });
 
 // POST /api/auth/upgrade
-router.post('/upgrade', authenticate, (req, res) => {
-    runSql('UPDATE users SET plan = ? WHERE id = ?', ['premium', req.user.id]);
-    const user = queryOne('SELECT id, name, email, plan, created_at FROM users WHERE id = ?', [req.user.id]);
-    res.json({ user, message: 'Upgraded to Premium!' });
+router.post('/upgrade', authenticate, async (req, res) => {
+    try {
+        const { data: user, error } = await supabase.from('users').update({ plan: 'premium' }).eq('id', req.user.id).select('id, name, email, plan, created_at').single();
+        if (error) throw error;
+        res.json({ user, message: 'Upgraded to Premium!' });
+    } catch (err) {
+        console.error('Upgrade error:', err);
+        res.status(500).json({ error: 'Server error.' });
+    }
 });
 
 module.exports = router;

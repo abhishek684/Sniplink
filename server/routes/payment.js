@@ -1,7 +1,7 @@
 const express = require('express');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const { queryOne, runSql } = require('../db');
+const { supabase } = require('../db');
 const authenticate = require('../middleware/auth');
 
 const router = express.Router();
@@ -15,7 +15,7 @@ const razorpay = new Razorpay({
 router.post('/create-order', authenticate, async (req, res) => {
     try {
         // Check if already premium
-        const user = queryOne('SELECT plan FROM users WHERE id = ?', [req.user.id]);
+        const { data: user } = await supabase.from('users').select('plan').eq('id', req.user.id).single();
         if (user && user.plan === 'premium') {
             return res.status(400).json({ error: 'You are already a Premium member!' });
         }
@@ -33,11 +33,13 @@ router.post('/create-order', authenticate, async (req, res) => {
         });
 
         // Save order to DB
-        runSql(
-            `INSERT INTO payments (user_id, razorpay_order_id, amount, currency, status)
-             VALUES (?, ?, ?, ?, ?)`,
-            [req.user.id, order.id, amount, 'INR', 'created']
-        );
+        await supabase.from('payments').insert({
+            user_id: req.user.id,
+            razorpay_order_id: order.id,
+            amount: amount,
+            currency: 'INR',
+            status: 'created'
+        });
 
         res.json({
             order_id: order.id,
@@ -69,28 +71,26 @@ router.post('/verify', authenticate, async (req, res) => {
 
         if (expectedSignature !== razorpay_signature) {
             // Update payment status to failed
-            runSql(
-                `UPDATE payments SET status = ?, razorpay_payment_id = ? WHERE razorpay_order_id = ?`,
-                ['failed', razorpay_payment_id, razorpay_order_id]
-            );
+            await supabase.from('payments').update({
+                status: 'failed',
+                razorpay_payment_id
+            }).eq('razorpay_order_id', razorpay_order_id);
+
             return res.status(400).json({ error: 'Payment verification failed. Invalid signature.' });
         }
 
         // Payment verified — update payment record
-        runSql(
-            `UPDATE payments SET 
-                status = ?, 
-                razorpay_payment_id = ?, 
-                razorpay_signature = ?,
-                paid_at = CURRENT_TIMESTAMP
-             WHERE razorpay_order_id = ?`,
-            ['paid', razorpay_payment_id, razorpay_signature, razorpay_order_id]
-        );
+        await supabase.from('payments').update({
+            status: 'paid',
+            razorpay_payment_id,
+            razorpay_signature,
+            paid_at: new Date().toISOString()
+        }).eq('razorpay_order_id', razorpay_order_id);
 
         // Upgrade user to premium
-        runSql('UPDATE users SET plan = ? WHERE id = ?', ['premium', req.user.id]);
+        await supabase.from('users').update({ plan: 'premium' }).eq('id', req.user.id);
 
-        const user = queryOne('SELECT id, name, email, plan, created_at FROM users WHERE id = ?', [req.user.id]);
+        const { data: user } = await supabase.from('users').select('id, name, email, plan, created_at').eq('id', req.user.id).single();
 
         res.json({
             success: true,
@@ -104,12 +104,16 @@ router.post('/verify', authenticate, async (req, res) => {
 });
 
 // GET /api/payment/status — check payment history
-router.get('/status', authenticate, (req, res) => {
+router.get('/status', authenticate, async (req, res) => {
     try {
-        const payment = queryOne(
-            `SELECT * FROM payments WHERE user_id = ? AND status = 'paid' ORDER BY paid_at DESC`,
-            [req.user.id]
-        );
+        const { data: payment } = await supabase.from('payments')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .eq('status', 'paid')
+            .order('paid_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
         res.json({ isPremium: !!payment, payment });
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch payment status.' });
