@@ -1,43 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const dns = require('dns');
+const { Resend } = require('resend');
 const { supabase } = require('../db');
 const authenticate = require('../middleware/auth');
 
 const router = express.Router();
 
-// Resolve SMTP host to IPv4 explicitly — cloud hosts like Render often fail on IPv6
-async function createTransporter() {
-    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const smtpPort = parseInt(process.env.SMTP_PORT || '587');
-
-    let host = smtpHost;
-    try {
-        const addresses = await dns.promises.resolve4(smtpHost);
-        if (addresses && addresses.length > 0) {
-            host = addresses[0]; // Use the first IPv4 address
-            console.log(`Resolved ${smtpHost} to IPv4: ${host}`);
-        }
-    } catch (err) {
-        console.warn(`Could not resolve ${smtpHost} to IPv4, using hostname directly:`, err.message);
-    }
-
-    return nodemailer.createTransport({
-        host: host,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        },
-        family: 4,
-        tls: {
-            servername: smtpHost, // Required for TLS when connecting to IP instead of hostname
-        },
-    });
-}
+// Resend HTTP email client — no SMTP ports needed, works on all cloud hosts
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Helper to generate 6 digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -68,12 +39,11 @@ router.post('/send-otp', async (req, res) => {
         // Upsert OTP code
         await supabase.from('otp_codes').upsert({ email, code: otp, expires_at: expiresAt }, { onConflict: 'email' });
 
-        // Send Email
-        const mailOptions = {
-            from: `"Sniplink" <${process.env.SMTP_USER}>`,
-            to: email,
+        // Send Email via Resend HTTP API (no SMTP port needed)
+        const { data: emailData, error: emailError } = await resend.emails.send({
+            from: 'Sniplink <onboarding@resend.dev>',
+            to: [email],
             subject: 'Sniplink - Verify your email',
-            text: `Hi ${name},\n\nYour OTP for Sniplink signup is: ${otp}\n\nThis code will expire in 10 minutes.\n\nThanks,\nSniplink Team`,
             html: `
                 <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; text-align: center; border: 1px solid #eaeaea; border-radius: 10px; background-color: #fcfcfc;">
                     <h2 style="color: #6c5ce7; margin-bottom: 20px;">Sniplink</h2>
@@ -83,11 +53,14 @@ router.post('/send-otp', async (req, res) => {
                     <p style="color: #888; font-size: 14px; margin-top: 20px;">This code will expire in 10 minutes.</p>
                 </div>
             `
-        };
+        });
 
-        const transporter = await createTransporter();
-        await transporter.sendMail(mailOptions);
+        if (emailError) {
+            console.error('Resend email error:', emailError);
+            return res.status(500).json({ error: 'Failed to send OTP email. Please try again.' });
+        }
 
+        console.log('OTP email sent successfully via Resend:', emailData?.id);
         res.json({ message: 'OTP sent successfully.' });
     } catch (err) {
         console.error('Send OTP error:', err);
