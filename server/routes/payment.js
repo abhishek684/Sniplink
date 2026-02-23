@@ -48,14 +48,20 @@ router.post('/create-order', authenticate, async (req, res) => {
         params.append('send_sms', 'false');
         params.append('allow_repeated_payments', 'false');
 
+        console.log('Instamojo request URL:', `${INSTAMOJO_BASE}/api/1.1/payment-requests/`);
+        console.log('Instamojo params:', { amount, purpose: 'Sniplink Premium - Lifetime', buyer_name: user.name, email: user.email, redirect_url: redirectUrl });
+
         const data = await instamojoRequest('payment-requests/', {
             method: 'POST',
             body: params,
         });
 
+        console.log('Instamojo response:', JSON.stringify(data));
+
         if (!data.success) {
             console.error('Instamojo create error:', JSON.stringify(data));
-            return res.status(500).json({ error: 'Failed to create payment order.' });
+            const detail = data.message ? JSON.stringify(data.message) : JSON.stringify(data);
+            return res.status(500).json({ error: `Payment failed: ${detail}` });
         }
 
         const paymentRequest = data.payment_request;
