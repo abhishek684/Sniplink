@@ -636,10 +636,12 @@ export default function Dashboard() {
             )}
 
             {/* Dashboard Footer */}
-            <footer className="dashboard-footer" style={{ marginTop: '3rem', padding: '1.5rem 0', borderTop: '1px solid var(--divider)', display: 'flex', justifyContent: 'center', gap: '2rem', fontSize: '0.85rem' }}>
+            <footer className="dashboard-footer" style={{ marginTop: '3rem', padding: '1.5rem 0', borderTop: '1px solid var(--divider)', display: 'flex', justifyContent: 'center', gap: '2rem', fontSize: '0.85rem', flexWrap: 'wrap' }}>
                 <a href="/about" className="text-muted">About Us</a>
+                <a href="/contact" className="text-muted">Contact Us</a>
                 <a href="/privacy" className="text-muted">Privacy Policy</a>
                 <a href="/terms" className="text-muted">Terms of Service</a>
+                <a href="/refund-policy" className="text-muted">Refund Policy</a>
             </footer>
         </div>
     );

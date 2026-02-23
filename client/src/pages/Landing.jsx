@@ -125,10 +125,12 @@ export default function Landing() {
 
             <footer className="landing-footer" style={{ padding: '3rem 0', borderTop: '1px solid rgba(255, 255, 255, 0.05)', marginTop: '4rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ display: 'flex', gap: '2rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '2rem', marginBottom: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                         <Link to="/about" className="text-muted" style={{ textDecoration: 'none' }}>About Us</Link>
+                        <Link to="/contact" className="text-muted" style={{ textDecoration: 'none' }}>Contact Us</Link>
                         <Link to="/privacy" className="text-muted" style={{ textDecoration: 'none' }}>Privacy Policy</Link>
                         <Link to="/terms" className="text-muted" style={{ textDecoration: 'none' }}>Terms of Service</Link>
+                        <Link to="/refund-policy" className="text-muted" style={{ textDecoration: 'none' }}>Refund Policy</Link>
                     </div>
                     <p style={{ margin: 0 }}>© 2026 Sniplink. Built with ⚡</p>
                     <div style={{ marginTop: '5px' }}>
