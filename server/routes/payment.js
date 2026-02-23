@@ -1,51 +1,73 @@
 const express = require('express');
-const Razorpay = require('razorpay');
-const crypto = require('crypto');
 const { supabase } = require('../db');
 const authenticate = require('../middleware/auth');
 
 const router = express.Router();
 
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// Instamojo REST API helper
+const INSTAMOJO_BASE = process.env.INSTAMOJO_BASE_URL || 'https://test.instamojo.com';
+const INSTAMOJO_API_KEY = process.env.INSTAMOJO_API_KEY;
+const INSTAMOJO_AUTH_TOKEN = process.env.INSTAMOJO_AUTH_TOKEN;
 
-// POST /api/payment/create-order — create a Razorpay order
+async function instamojoRequest(endpoint, options = {}) {
+    const url = `${INSTAMOJO_BASE}/api/1.1/${endpoint}`;
+    const res = await fetch(url, {
+        ...options,
+        headers: {
+            'X-Api-Key': INSTAMOJO_API_KEY,
+            'X-Auth-Token': INSTAMOJO_AUTH_TOKEN,
+            ...(options.headers || {}),
+        },
+    });
+    return res.json();
+}
+
+// POST /api/payment/create-order — create an Instamojo payment request
 router.post('/create-order', authenticate, async (req, res) => {
     try {
         // Check if already premium
-        const { data: user } = await supabase.from('users').select('plan').eq('id', req.user.id).single();
+        const { data: user } = await supabase.from('users').select('plan, name, email').eq('id', req.user.id).single();
         if (user && user.plan === 'premium') {
             return res.status(400).json({ error: 'You are already a Premium member!' });
         }
 
-        const amount = parseInt(process.env.PREMIUM_PRICE) || 49900; // ₹499 in paise
+        const amount = ((parseInt(process.env.PREMIUM_PRICE) || 49900) / 100).toFixed(2); // Convert paise to rupees
+        const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        const redirectUrl = `${clientUrl}/payment-success`;
 
-        const order = await razorpay.orders.create({
-            amount,
-            currency: 'INR',
-            receipt: `premium_${req.user.id}_${Date.now()}`,
-            notes: {
-                user_id: String(req.user.id),
-                plan: 'premium',
-            },
+        // Create Instamojo payment request
+        const params = new URLSearchParams();
+        params.append('amount', amount);
+        params.append('purpose', 'Sniplink Premium — Lifetime');
+        params.append('buyer_name', user.name || 'User');
+        params.append('email', user.email);
+        params.append('redirect_url', redirectUrl);
+        params.append('allow_repeated_payments', 'false');
+
+        const data = await instamojoRequest('payment-requests/', {
+            method: 'POST',
+            body: params,
         });
+
+        if (!data.success) {
+            console.error('Instamojo create error:', data);
+            return res.status(500).json({ error: 'Failed to create payment order.' });
+        }
+
+        const paymentRequest = data.payment_request;
 
         // Save order to DB
         await supabase.from('payments').insert({
             user_id: req.user.id,
-            razorpay_order_id: order.id,
-            amount: amount,
+            razorpay_order_id: paymentRequest.id, // reusing column for instamojo payment_request_id
+            amount: parseInt(process.env.PREMIUM_PRICE) || 49900,
             currency: 'INR',
             status: 'created'
         });
 
         res.json({
-            order_id: order.id,
-            amount: order.amount,
-            currency: order.currency,
-            key_id: process.env.RAZORPAY_KEY_ID,
+            payment_url: paymentRequest.longurl,
+            payment_request_id: paymentRequest.id,
         });
     } catch (err) {
         console.error('Create order error:', err);
@@ -53,49 +75,56 @@ router.post('/create-order', authenticate, async (req, res) => {
     }
 });
 
-// POST /api/payment/verify — verify Razorpay payment signature and upgrade user
+// POST /api/payment/verify — verify Instamojo payment and upgrade user
 router.post('/verify', authenticate, async (req, res) => {
     try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+        const { payment_request_id, payment_id } = req.body;
 
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        if (!payment_request_id || !payment_id) {
             return res.status(400).json({ error: 'Missing payment details.' });
         }
 
-        // Verify signature
-        const body = razorpay_order_id + '|' + razorpay_payment_id;
-        const expectedSignature = crypto
-            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-            .update(body)
-            .digest('hex');
+        // Fetch payment request details from Instamojo
+        const data = await instamojoRequest(`payment-requests/${payment_request_id}/${payment_id}/`);
 
-        if (expectedSignature !== razorpay_signature) {
-            // Update payment status to failed
+        if (!data.success) {
+            console.error('Instamojo verify error:', data);
             await supabase.from('payments').update({
                 status: 'failed',
-                razorpay_payment_id
-            }).eq('razorpay_order_id', razorpay_order_id);
+                razorpay_payment_id: payment_id
+            }).eq('razorpay_order_id', payment_request_id);
 
-            return res.status(400).json({ error: 'Payment verification failed. Invalid signature.' });
+            return res.status(400).json({ error: 'Payment verification failed.' });
+        }
+
+        const payment = data.payment_request;
+        const paymentStatus = payment.payment?.status;
+
+        if (paymentStatus !== 'Credit') {
+            await supabase.from('payments').update({
+                status: 'failed',
+                razorpay_payment_id: payment_id
+            }).eq('razorpay_order_id', payment_request_id);
+
+            return res.status(400).json({ error: 'Payment was not successful.' });
         }
 
         // Payment verified — update payment record
         await supabase.from('payments').update({
             status: 'paid',
-            razorpay_payment_id,
-            razorpay_signature,
+            razorpay_payment_id: payment_id,
             paid_at: new Date().toISOString()
-        }).eq('razorpay_order_id', razorpay_order_id);
+        }).eq('razorpay_order_id', payment_request_id);
 
         // Upgrade user to premium
         await supabase.from('users').update({ plan: 'premium' }).eq('id', req.user.id);
 
-        const { data: user } = await supabase.from('users').select('id, name, email, plan, created_at').eq('id', req.user.id).single();
+        const { data: updatedUser } = await supabase.from('users').select('id, name, email, plan, created_at').eq('id', req.user.id).single();
 
         res.json({
             success: true,
             message: '🎉 Payment successful! You are now a Premium member.',
-            user,
+            user: updatedUser,
         });
     } catch (err) {
         console.error('Verify payment error:', err);

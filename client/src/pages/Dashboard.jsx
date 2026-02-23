@@ -152,61 +152,20 @@ export default function Dashboard() {
         setTimeout(() => setSuccess(''), 2000);
     };
 
-    // Razorpay Payment Handler
+    // Instamojo Payment Handler
     const handleUpgrade = async () => {
         setError('');
         setUpgrading(true);
         try {
-            // 1. Create order on backend
+            // 1. Create payment request on backend
             const orderData = await api.createOrder();
 
-            // 2. Open Razorpay checkout
-            const options = {
-                key: orderData.key_id,
-                amount: orderData.amount,
-                currency: orderData.currency,
-                name: 'Sniplink',
-                description: 'Premium Plan — Lifetime',
-                order_id: orderData.order_id,
-                handler: async function (response) {
-                    // 3. Verify payment on backend
-                    try {
-                        const verifyData = await api.verifyPayment({
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                        });
-                        if (verifyData.success) {
-                            await refreshUser();
-                            setSuccess('🎉 ' + verifyData.message);
-                            setTimeout(() => setSuccess(''), 5000);
-                        }
-                    } catch (err) {
-                        setError('Payment verification failed. Contact support.');
-                        setTimeout(() => setError(''), 6000);
-                    }
-                },
-                prefill: {
-                    name: user?.name || '',
-                    email: user?.email || '',
-                },
-                theme: {
-                    color: '#6c5ce7',
-                },
-                modal: {
-                    ondismiss: function () {
-                        setUpgrading(false);
-                    },
-                },
-            };
-
-            const rzp = new window.Razorpay(options);
-            rzp.on('payment.failed', function (response) {
-                setError('Payment failed: ' + (response.error?.description || 'Unknown error'));
-                setTimeout(() => setError(''), 6000);
-                setUpgrading(false);
-            });
-            rzp.open();
+            // 2. Redirect user to Instamojo payment page
+            if (orderData.payment_url) {
+                window.location.href = orderData.payment_url;
+            } else {
+                throw { error: 'No payment URL received.' };
+            }
         } catch (err) {
             setError(err.error || 'Failed to initiate payment.');
             setTimeout(() => setError(''), 5000);
@@ -669,7 +628,7 @@ export default function Dashboard() {
                                 <button className="btn btn-premium btn-full btn-lg" onClick={() => { setShowPremiumModal(false); handleUpgrade(); }} disabled={upgrading}>
                                     {upgrading ? '⏳ Processing...' : 'Buy Premium Now ⚡'}
                                 </button>
-                                <p className="secure-payment-note">🔒 Secured by Razorpay</p>
+                                <p className="secure-payment-note">🔒 Secured by Instamojo</p>
                             </div>
                         </div>
                     </div>
