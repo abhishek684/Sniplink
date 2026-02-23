@@ -233,7 +233,7 @@ export default function Dashboard() {
                         </button>
                         {!isPremium && (
                             <button className="btn btn-premium" onClick={() => setShowPremiumModal(true)} disabled={upgrading}>
-                                {upgrading ? '⏳ Processing...' : '✨ Upgrade to Premium — ₹1'}
+                                {upgrading ? '⏳ Processing...' : '✨ Upgrade to Premium — ₹9'}
                             </button>
                         )}
                         {isPremium && <span className="plan-badge premium">⭐ Premium</span>}
@@ -341,7 +341,7 @@ export default function Dashboard() {
                                 <p className="text-muted">Get unlimited links, bulk create, URL editing, detailed analytics, custom themes & more.</p>
                             </div>
                             <button className="btn btn-premium" onClick={() => setShowPremiumModal(true)} disabled={upgrading}>
-                                {upgrading ? '⏳ Processing...' : '✨ Upgrade — ₹1'}
+                                {upgrading ? '⏳ Processing...' : '✨ Upgrade — ₹9'}
                             </button>
                         </div>
                         <div className="premium-features-list">
@@ -622,7 +622,7 @@ export default function Dashboard() {
                             <div className="premium-modal-action">
                                 <div className="premium-price-tag">
                                     <span className="price-strike">₹499</span>
-                                    <span className="price-current">₹1</span>
+                                    <span className="price-current">₹9</span>
                                     <span className="price-period">Lifetime Access</span>
                                 </div>
                                 <button className="btn btn-premium btn-full btn-lg" onClick={() => { setShowPremiumModal(false); handleUpgrade(); }} disabled={upgrading}>

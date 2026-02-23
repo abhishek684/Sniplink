@@ -107,7 +107,7 @@ export default function Landing() {
                         </div>
                         <div className="pricing-card pricing-card-premium">
                             <div className="pricing-badge pricing-badge-premium">Premium ✨</div>
-                            <div className="pricing-price">₹1<span>/one-time</span></div>
+                            <div className="pricing-price">₹9<span>/one-time</span></div>
                             <ul className="pricing-features">
                                 <li>✓ Unlimited short links</li>
                                 <li>✓ Click tracking</li>

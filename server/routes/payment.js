@@ -31,17 +31,21 @@ router.post('/create-order', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'You are already a Premium member!' });
         }
 
-        const amount = ((parseInt(process.env.PREMIUM_PRICE) || 49900) / 100).toFixed(2); // Convert paise to rupees
+        const amountInRupees = Math.max(9, (parseInt(process.env.PREMIUM_PRICE) || 49900) / 100); // Instamojo minimum ₹9
+        const amount = amountInRupees.toFixed(2);
         const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
         const redirectUrl = `${clientUrl}/payment-success`;
 
         // Create Instamojo payment request
         const params = new URLSearchParams();
         params.append('amount', amount);
-        params.append('purpose', 'Sniplink Premium — Lifetime');
+        params.append('purpose', 'Sniplink Premium - Lifetime');
         params.append('buyer_name', user.name || 'User');
         params.append('email', user.email);
+        params.append('phone', '9999999999'); // placeholder — Instamojo requires phone
         params.append('redirect_url', redirectUrl);
+        params.append('send_email', 'false');
+        params.append('send_sms', 'false');
         params.append('allow_repeated_payments', 'false');
 
         const data = await instamojoRequest('payment-requests/', {
@@ -50,7 +54,7 @@ router.post('/create-order', authenticate, async (req, res) => {
         });
 
         if (!data.success) {
-            console.error('Instamojo create error:', data);
+            console.error('Instamojo create error:', JSON.stringify(data));
             return res.status(500).json({ error: 'Failed to create payment order.' });
         }
 
