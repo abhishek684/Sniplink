@@ -9,7 +9,7 @@ export default function LinkStats() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const BASE_URL = window.location.protocol + '//' + window.location.hostname + ':5000';
+    const BASE_URL = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5000');
 
     useEffect(() => {
         api.getLinkStats(id)
