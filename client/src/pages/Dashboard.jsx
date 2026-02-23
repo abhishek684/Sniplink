@@ -372,9 +372,6 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {/* Alerts */}
-                {error && <div className="alert alert-error">{error}</div>}
-                {success && <div className="alert alert-success">{success}</div>}
 
                 {/* Premium Feature Callout (free users) */}
                 {!isPremium && (
@@ -463,6 +460,9 @@ export default function Dashboard() {
                         <button type="submit" className="btn btn-primary" disabled={creating}>
                             {creating ? 'Creating...' : '⚡ Shorten Link'}
                         </button>
+                        {/* Alerts — shown right below the button */}
+                        {error && <div className="alert alert-error" style={{ marginTop: '1rem' }}>{error}</div>}
+                        {success && <div className="alert alert-success" style={{ marginTop: '1rem' }}>{success}</div>}
                     </form>
                 </div>
 
