@@ -2,22 +2,42 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const dns = require('dns');
 const { supabase } = require('../db');
 const authenticate = require('../middleware/auth');
 
 const router = express.Router();
 
-// Email transporter setup
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: process.env.SMTP_PORT == 465, // true for 465, false for other ports
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-    family: 4, // Force IPv4 — fixes ENETUNREACH on Render/cloud hosts
-});
+// Resolve SMTP host to IPv4 explicitly — cloud hosts like Render often fail on IPv6
+async function createTransporter() {
+    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const smtpPort = parseInt(process.env.SMTP_PORT || '587');
+
+    let host = smtpHost;
+    try {
+        const addresses = await dns.promises.resolve4(smtpHost);
+        if (addresses && addresses.length > 0) {
+            host = addresses[0]; // Use the first IPv4 address
+            console.log(`Resolved ${smtpHost} to IPv4: ${host}`);
+        }
+    } catch (err) {
+        console.warn(`Could not resolve ${smtpHost} to IPv4, using hostname directly:`, err.message);
+    }
+
+    return nodemailer.createTransport({
+        host: host,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        },
+        family: 4,
+        tls: {
+            servername: smtpHost, // Required for TLS when connecting to IP instead of hostname
+        },
+    });
+}
 
 // Helper to generate 6 digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -65,6 +85,7 @@ router.post('/send-otp', async (req, res) => {
             `
         };
 
+        const transporter = await createTransporter();
         await transporter.sendMail(mailOptions);
 
         res.json({ message: 'OTP sent successfully.' });
