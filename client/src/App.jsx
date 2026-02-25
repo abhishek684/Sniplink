@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentGateway from './pages/PaymentGateway';
 import LinkStats from './pages/LinkStats';
 import Landing from './pages/Landing';
 import About from './pages/About';
@@ -48,6 +49,9 @@ export default function App() {
                 } />
                 <Route path="/dashboard/link/:id" element={
                     <ProtectedRoute><LinkStats /></ProtectedRoute>
+                } />
+                <Route path="/payment-gateway" element={
+                    <ProtectedRoute><PaymentGateway /></ProtectedRoute>
                 } />
                 <Route path="/payment-success" element={
                     <ProtectedRoute><PaymentSuccess /></ProtectedRoute>

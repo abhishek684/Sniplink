@@ -15,6 +15,14 @@ export default function PaymentSuccess() {
         const paymentId = searchParams.get('payment_id');
         const paymentStatus = searchParams.get('payment_status');
 
+        // Handle coupon/fake payment success (already upgraded)
+        if (paymentRequestId === 'coupon' || paymentRequestId?.startsWith('PAY_') || paymentRequestId?.startsWith('COUPON_')) {
+            setStatus('success');
+            setMessage('🎉 Payment successful! You are now a Premium member.');
+            refreshUser();
+            return;
+        }
+
         if (!paymentRequestId || !paymentId) {
             setStatus('failed');
             setMessage('Invalid payment response. No payment details found.');
@@ -27,7 +35,7 @@ export default function PaymentSuccess() {
             return;
         }
 
-        // Verify payment on backend
+        // Verify payment on backend (Instamojo legacy flow)
         api.verifyPayment({ payment_request_id: paymentRequestId, payment_id: paymentId })
             .then(data => {
                 if (data.success) {

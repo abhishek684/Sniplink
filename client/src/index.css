@@ -2047,3 +2047,952 @@ a:hover {
         padding: 0 1rem;
     }
 }
+
+/* ============================
+   Payment Gateway Page
+   ============================ */
+
+.pg-page {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.pg-container {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 2rem;
+    max-width: 960px;
+    width: 100%;
+    animation: pgFadeIn 0.5s ease;
+}
+
+@keyframes pgFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pg-form-section {
+    background: var(--bg-card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 2rem;
+    backdrop-filter: blur(12px);
+}
+
+.pg-summary-section {
+    position: sticky;
+    top: 2rem;
+    align-self: start;
+}
+
+/* Header */
+.pg-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--divider);
+}
+
+.pg-back-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-family: var(--font);
+}
+
+.pg-back-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.pg-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: var(--success);
+    font-size: 0.9rem;
+}
+
+.pg-brand-icon {
+    font-size: 1.2rem;
+}
+
+/* Card Preview */
+.pg-card-preview {
+    perspective: 1000px;
+    height: 200px;
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+}
+
+.pg-card-front,
+.pg-card-back {
+    position: absolute;
+    width: 100%;
+    height: 200px;
+    border-radius: 16px;
+    backface-visibility: hidden;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 1.5rem;
+    color: white;
+}
+
+.pg-card-front {
+    background: linear-gradient(135deg, #1a1a3e 0%, #2d2d6e 40%, #4a3aad 100%);
+    box-shadow: 0 10px 40px rgba(108, 92, 231, 0.25);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.pg-card-preview.flipped .pg-card-front {
+    transform: rotateY(180deg);
+}
+
+.pg-card-back {
+    background: linear-gradient(135deg, #2d2d6e 0%, #1a1a3e 100%);
+    box-shadow: 0 10px 40px rgba(108, 92, 231, 0.25);
+    transform: rotateY(180deg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.pg-card-preview.flipped .pg-card-back {
+    transform: rotateY(0deg);
+}
+
+.pg-card-chip {
+    width: 45px;
+    height: 32px;
+    background: linear-gradient(135deg, #daa520, #f5d062);
+    border-radius: 6px;
+    position: relative;
+}
+
+.pg-card-chip::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.pg-card-type {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    opacity: 0.9;
+}
+
+.pg-card-type.visa {
+    color: #1a1f71;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    font-style: italic;
+}
+
+.pg-card-type.mastercard {
+    color: #ff5f00;
+}
+
+.pg-card-type.rupay {
+    color: #00baf2;
+}
+
+.pg-card-number {
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 3px;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.pg-card-details {
+    display: flex;
+    justify-content: space-between;
+}
+
+.pg-card-label {
+    display: block;
+    font-size: 0.6rem;
+    opacity: 0.6;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.pg-card-value {
+    display: block;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+.pg-card-stripe {
+    width: 100%;
+    height: 42px;
+    background: #111;
+    margin-bottom: 1.5rem;
+    margin-left: -1.5rem;
+    width: calc(100% + 3rem);
+}
+
+.pg-card-cvv-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-right: 1rem;
+}
+
+.pg-card-cvv-label {
+    font-size: 0.7rem;
+    opacity: 0.6;
+    letter-spacing: 1px;
+}
+
+.pg-card-cvv-value {
+    background: white;
+    color: #111;
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 3px;
+}
+
+/* Tabs */
+.pg-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.pg-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.pg-tab:hover {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.pg-tab.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 2px 12px var(--accent-glow);
+}
+
+.pg-tab-icon {
+    font-size: 1.2rem;
+}
+
+/* Form Styles */
+.pg-form {
+    animation: pgSlideUp 0.3s ease;
+}
+
+@keyframes pgSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pg-form-group {
+    margin-bottom: 1rem;
+}
+
+.pg-form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+}
+
+.pg-form-group input,
+.pg-form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg-input);
+    border: 1.5px solid var(--card-border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.pg-form-group input::placeholder {
+    color: var(--text-muted);
+}
+
+.pg-form-group input:focus {
+    border-color: var(--accent);
+    background: var(--bg-input-focus);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.pg-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.pg-form-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.pg-input-icon-wrapper {
+    position: relative;
+}
+
+.pg-input-icon-wrapper input {
+    padding-right: 40px;
+}
+
+.pg-input-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+}
+
+/* UPI Apps */
+.pg-upi-apps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.pg-upi-app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1.5px solid var(--card-border);
+    background: var(--bg-input);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.pg-upi-app:hover {
+    border-color: var(--accent);
+    background: rgba(108, 92, 231, 0.08);
+}
+
+.pg-upi-app-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.75rem;
+    color: white;
+}
+
+.pg-divider-text {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 1.2rem 0;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.pg-divider-text::before,
+.pg-divider-text::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--divider);
+}
+
+/* Bank Grid */
+.pg-bank-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.pg-bank-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--card-border);
+    border-radius: 10px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font);
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+.pg-bank-option:hover {
+    border-color: var(--accent);
+    background: rgba(108, 92, 231, 0.06);
+}
+
+.pg-bank-option.active {
+    border-color: var(--accent);
+    background: rgba(108, 92, 231, 0.12);
+}
+
+.pg-bank-icon {
+    font-size: 1.3rem;
+}
+
+.pg-bank-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.pg-bank-check {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* Wallet Grid */
+.pg-wallet-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.pg-wallet-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    border: 1.5px solid var(--card-border);
+    border-radius: 10px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.pg-wallet-option:hover {
+    border-color: var(--accent);
+}
+
+.pg-wallet-option.active {
+    border-color: var(--accent);
+    background: rgba(108, 92, 231, 0.12);
+}
+
+.pg-wallet-icon {
+    font-size: 1.3rem;
+}
+
+.pg-wallet-check {
+    margin-left: auto;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* Error */
+.pg-error {
+    background: var(--error-bg);
+    color: var(--error);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 1rem;
+    animation: pgSlideUp 0.3s ease;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+/* Summary Card */
+.pg-summary-card {
+    background: var(--bg-card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    backdrop-filter: blur(12px);
+}
+
+.pg-summary-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.pg-summary-item {
+    margin-bottom: 1rem;
+}
+
+.pg-summary-plan {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pg-plan-badge {
+    background: var(--premium-gradient);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.pg-summary-plan strong {
+    display: block;
+    font-size: 0.95rem;
+}
+
+.pg-summary-plan p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.pg-summary-divider {
+    height: 1px;
+    background: var(--divider);
+    margin: 1rem 0;
+}
+
+.pg-summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.pg-summary-row.pg-total {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-top: 0.5rem;
+}
+
+.pg-summary-row.pg-discount {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.pg-strike-price {
+    color: var(--text-muted);
+    margin-right: 8px;
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+/* Coupon Section */
+.pg-coupon-section {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--divider);
+}
+
+.pg-coupon-section label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.pg-coupon-input-row {
+    display: flex;
+    gap: 6px;
+}
+
+.pg-coupon-input-row input {
+    flex: 1;
+    padding: 10px 12px;
+    background: var(--bg-input);
+    border: 1.5px solid var(--card-border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 0.85rem;
+    outline: none;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.pg-coupon-input-row input::placeholder {
+    color: var(--text-muted);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.pg-coupon-input-row input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.pg-coupon-apply-btn {
+    padding: 10px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.pg-coupon-apply-btn:hover:not(:disabled) {
+    background: var(--accent-dark);
+}
+
+.pg-coupon-apply-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pg-coupon-applied {
+    animation: pgCouponPop 0.4s ease;
+}
+
+@keyframes pgCouponPop {
+    0% {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.pg-coupon-badge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--success-bg);
+    border: 1px solid rgba(0, 184, 148, 0.3);
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: var(--success);
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.pg-coupon-remove {
+    background: none;
+    border: none;
+    color: var(--success);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.pg-coupon-remove:hover {
+    opacity: 1;
+}
+
+.pg-coupon-savings {
+    text-align: center;
+    color: var(--success);
+    font-weight: 600;
+    font-size: 0.8rem;
+    margin-top: 6px;
+    animation: pgPulse 1.5s ease infinite;
+}
+
+@keyframes pgPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.pg-coupon-error {
+    color: var(--error);
+    font-size: 0.8rem;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+/* Pay Button */
+.pg-pay-btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 1.2rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.pg-pay-btn:hover {
+    background: var(--accent-dark);
+    box-shadow: 0 6px 24px var(--accent-glow);
+    transform: translateY(-2px);
+}
+
+.pg-pay-btn.pg-pay-free {
+    background: linear-gradient(135deg, #00b894, #00cec9);
+    box-shadow: 0 4px 20px var(--cyan-glow);
+    animation: pgGlow 2s ease infinite;
+}
+
+@keyframes pgGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 20px var(--cyan-glow);
+    }
+
+    50% {
+        box-shadow: 0 4px 30px rgba(0, 206, 201, 0.4);
+    }
+}
+
+.pg-pay-btn.pg-pay-free:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px rgba(0, 206, 201, 0.4);
+}
+
+/* Security */
+.pg-security {
+    margin-top: 1.2rem;
+    text-align: center;
+}
+
+.pg-security-badges {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.pg-badge {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--divider);
+    font-weight: 500;
+}
+
+.pg-security-text {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Processing Screen */
+.pg-processing-screen {
+    text-align: center;
+    animation: pgFadeIn 0.5s ease;
+}
+
+.pg-processing-spinner {
+    width: 56px;
+    height: 56px;
+    border: 4px solid var(--divider);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1.5rem;
+}
+
+.pg-processing-screen h2 {
+    font-size: 1.3rem;
+    margin-bottom: 0.75rem;
+}
+
+.pg-processing-step {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    min-height: 1.4em;
+}
+
+.pg-processing-bar {
+    width: 280px;
+    height: 4px;
+    background: var(--divider);
+    border-radius: 4px;
+    margin: 0 auto 1rem;
+    overflow: hidden;
+}
+
+.pg-processing-fill {
+    height: 100%;
+    background: var(--premium-gradient);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.pg-processing-note {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* Success Screen */
+.pg-success-screen {
+    text-align: center;
+    animation: pgFadeIn 0.5s ease;
+}
+
+.pg-success-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+}
+
+.pg-checkmark-svg {
+    width: 80px;
+    height: 80px;
+}
+
+.pg-checkmark-circle {
+    stroke: var(--success);
+    stroke-width: 2;
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    animation: pgStroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.pg-checkmark-check {
+    stroke: var(--success);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: pgStroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) forwards 0.4s;
+}
+
+@keyframes pgStroke {
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+.pg-success-screen h2 {
+    font-size: 1.5rem;
+    color: var(--success);
+    margin-bottom: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pg-container {
+        grid-template-columns: 1fr;
+    }
+
+    .pg-summary-section {
+        position: static;
+    }
+
+    .pg-tabs {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .pg-bank-grid,
+    .pg-wallet-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pg-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .pg-upi-apps {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

@@ -25,6 +25,8 @@ export const api = {
     createOrder: () => request('/payment/create-order', { method: 'POST' }),
     verifyPayment: (body) => request('/payment/verify', { method: 'POST', body: JSON.stringify(body) }),
     getPaymentStatus: () => request('/payment/status'),
+    applyCoupon: (body) => request('/payment/apply-coupon', { method: 'POST', body: JSON.stringify(body) }),
+    fakePay: (body) => request('/payment/fake-pay', { method: 'POST', body: JSON.stringify(body) }),
 
     // Links
     getLinks: (params) => request(`/links${params ? '?' + new URLSearchParams(params) : ''}`),

@@ -158,5 +158,89 @@ router.get('/status', authenticate, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch payment status.' });
     }
 });
+// POST /api/payment/apply-coupon — validate coupon code and upgrade user
+router.post('/apply-coupon', authenticate, async (req, res) => {
+    try {
+        const { coupon_code } = req.body;
+
+        if (!coupon_code) {
+            return res.status(400).json({ error: 'Coupon code is required.' });
+        }
+
+        // Check if already premium
+        const { data: user } = await supabase.from('users').select('plan').eq('id', req.user.id).single();
+        if (user && user.plan === 'premium') {
+            return res.status(400).json({ error: 'You are already a Premium member!' });
+        }
+
+        // Validate coupon code (case-insensitive)
+        if (coupon_code.trim().toUpperCase() !== 'ABHI') {
+            return res.status(400).json({ error: 'Invalid coupon code.' });
+        }
+
+        // Save payment record
+        await supabase.from('payments').insert({
+            user_id: req.user.id,
+            razorpay_order_id: `COUPON_${Date.now()}`,
+            razorpay_payment_id: `FREE_${coupon_code.toUpperCase()}_${Date.now()}`,
+            amount: 0,
+            currency: 'INR',
+            status: 'paid',
+            paid_at: new Date().toISOString()
+        });
+
+        // Upgrade user to premium
+        await supabase.from('users').update({ plan: 'premium' }).eq('id', req.user.id);
+
+        const { data: updatedUser } = await supabase.from('users').select('id, name, email, plan, created_at').eq('id', req.user.id).single();
+
+        res.json({
+            success: true,
+            message: '🎉 Coupon applied! You are now a Premium member.',
+            user: updatedUser,
+        });
+    } catch (err) {
+        console.error('Apply coupon error:', err);
+        res.status(500).json({ error: 'Failed to apply coupon code.' });
+    }
+});
+
+// POST /api/payment/fake-pay — simulate payment and upgrade user
+router.post('/fake-pay', authenticate, async (req, res) => {
+    try {
+        const { method } = req.body;
+
+        // Check if already premium
+        const { data: user } = await supabase.from('users').select('plan').eq('id', req.user.id).single();
+        if (user && user.plan === 'premium') {
+            return res.status(400).json({ error: 'You are already a Premium member!' });
+        }
+
+        // Save payment record
+        await supabase.from('payments').insert({
+            user_id: req.user.id,
+            razorpay_order_id: `PAY_${Date.now()}`,
+            razorpay_payment_id: `TXN_${method || 'card'}_${Date.now()}`,
+            amount: 900, // ₹9 in paise
+            currency: 'INR',
+            status: 'paid',
+            paid_at: new Date().toISOString()
+        });
+
+        // Upgrade user to premium
+        await supabase.from('users').update({ plan: 'premium' }).eq('id', req.user.id);
+
+        const { data: updatedUser } = await supabase.from('users').select('id, name, email, plan, created_at').eq('id', req.user.id).single();
+
+        res.json({
+            success: true,
+            message: '🎉 Payment successful! You are now a Premium member.',
+            user: updatedUser,
+        });
+    } catch (err) {
+        console.error('Fake pay error:', err);
+        res.status(500).json({ error: 'Payment processing failed.' });
+    }
+});
 
 module.exports = router;

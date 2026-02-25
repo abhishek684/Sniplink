@@ -152,25 +152,9 @@ export default function Dashboard() {
         setTimeout(() => setSuccess(''), 2000);
     };
 
-    // Instamojo Payment Handler
-    const handleUpgrade = async () => {
-        setError('');
-        setUpgrading(true);
-        try {
-            // 1. Create payment request on backend
-            const orderData = await api.createOrder();
-
-            // 2. Redirect user to Instamojo payment page
-            if (orderData.payment_url) {
-                window.location.href = orderData.payment_url;
-            } else {
-                throw { error: 'No payment URL received.' };
-            }
-        } catch (err) {
-            setError(err.error || 'Failed to initiate payment.');
-            setTimeout(() => setError(''), 5000);
-            setUpgrading(false);
-        }
+    // Payment Handler — navigate to payment gateway page
+    const handleUpgrade = () => {
+        navigate('/payment-gateway');
     };
 
     const handleQR = async (id) => {
@@ -625,10 +609,10 @@ export default function Dashboard() {
                                     <span className="price-current">₹9</span>
                                     <span className="price-period">Lifetime Access</span>
                                 </div>
-                                <button className="btn btn-premium btn-full btn-lg" onClick={() => { setShowPremiumModal(false); handleUpgrade(); }} disabled={upgrading}>
-                                    {upgrading ? '⏳ Processing...' : 'Buy Premium Now ⚡'}
+                                <button className="btn btn-premium btn-full btn-lg" onClick={() => { setShowPremiumModal(false); handleUpgrade(); }}>
+                                    Buy Premium Now ⚡
                                 </button>
-                                <p className="secure-payment-note">🔒 Secured by Instamojo</p>
+                                <p className="secure-payment-note">🔒 Secure Payment</p>
                             </div>
                         </div>
                     </div>
