@@ -30,8 +30,8 @@ export function AuthProvider({ children }) {
         return await api.sendOtp({ name, email, password });
     };
 
-    const signup = async (name, email, password, otp) => {
-        const data = await api.signup({ name, email, password, otp });
+    const signup = async (name, email, password) => {
+        const data = await api.signup({ name, email, password });
         localStorage.setItem('token', data.token);
         setUser(data.user);
         return data;

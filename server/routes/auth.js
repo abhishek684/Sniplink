@@ -68,37 +68,26 @@ router.post('/send-otp', async (req, res) => {
     }
 });
 
-// POST /api/auth/signup
+// POST /api/auth/signup — Direct signup (no OTP needed)
 router.post('/signup', async (req, res) => {
     try {
-        const { name, email, password, otp } = req.body;
+        const { name, email, password } = req.body;
 
-        if (!name || !email || !password || !otp) {
-            return res.status(400).json({ error: 'Name, email, password, and OTP are required.' });
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Name, email, and password are required.' });
         }
 
-        // Verify OTP
-        const { data: otpRecord } = await supabase.from('otp_codes').select('code, expires_at').eq('email', email).maybeSingle();
-
-        if (!otpRecord) {
-            return res.status(400).json({ error: 'OTP not requested or expired. Please request a new one.' });
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'Password must be at least 6 characters.' });
         }
 
-        if (otpRecord.code !== otp) {
-            return res.status(400).json({ error: 'Invalid OTP. Please try again.' });
-        }
-
-        if (new Date(otpRecord.expires_at) < new Date()) {
-            return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
-        }
-
-        // Check again if user exists to prevent race conditions
+        // Check if user already exists
         const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
         if (existing) {
             return res.status(409).json({ error: 'An account with this email already exists.' });
         }
 
-        // Valid OTP — proceed with signup
+        // Create user directly
         const password_hash = await bcrypt.hash(password, 12);
 
         const { data: newUser, error: insertError } = await supabase.from('users').insert({
@@ -106,9 +95,6 @@ router.post('/signup', async (req, res) => {
         }).select().single();
 
         if (insertError) throw insertError;
-
-        // Delete used OTP
-        await supabase.from('otp_codes').delete().eq('email', email);
 
         const payload = { id: newUser.id, name: newUser.name, email: newUser.email, plan: newUser.plan };
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
