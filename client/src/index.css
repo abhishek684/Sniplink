@@ -1272,6 +1272,7 @@ a:hover {
     z-index: 200;
     animation: fadeIn 0.2s ease;
     padding: 1rem;
+    overflow-y: auto;
 }
 
 @keyframes fadeIn {
@@ -2106,6 +2107,47 @@ a:hover {
     .dashboard-footer {
         gap: 1rem !important;
         font-size: 0.75rem !important;
+    }
+
+    .modal-overlay {
+        align-items: flex-start;
+        padding: 0.5rem;
+    }
+
+    .modal {
+        padding: 1.2rem;
+        margin: 0.5rem auto;
+    }
+
+    .premium-modal {
+        max-width: 100%;
+    }
+
+    .premium-modal-content {
+        padding: 0;
+    }
+
+    .premium-benefits-full li {
+        padding: 0.6rem 0.8rem;
+    }
+
+    .benefit-icon {
+        font-size: 1.2rem;
+        width: 35px;
+        height: 35px;
+        min-width: 35px;
+    }
+
+    .benefit-text strong {
+        font-size: 0.85rem;
+    }
+
+    .benefit-text span {
+        font-size: 0.75rem;
+    }
+
+    .premium-price-tag {
+        margin-top: 0.5rem;
     }
 }
 
