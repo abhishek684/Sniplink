@@ -2028,6 +2028,49 @@ a:hover {
     .actions-cell {
         flex-wrap: wrap;
     }
+
+    /* Hide less important columns on mobile */
+    .links-table th:nth-child(4),
+    .links-table td:nth-child(4),
+    .links-table th:nth-child(5),
+    .links-table td:nth-child(5),
+    .links-table th:nth-child(6),
+    .links-table td:nth-child(6) {
+        display: none;
+    }
+
+    .link-info-cell {
+        max-width: 120px;
+    }
+
+    .link-url {
+        max-width: 110px;
+    }
+
+    .short-link {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+
+    .copy-icon {
+        display: none;
+    }
+
+    .link-title {
+        font-size: 0.8rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .link-tags {
+        display: none;
+    }
 }
 
 @media (max-width: 480px) {
@@ -2045,6 +2088,24 @@ a:hover {
 
     .navbar-inner {
         padding: 0 1rem;
+    }
+
+    .short-link {
+        max-width: 100px;
+        font-size: 0.7rem;
+    }
+
+    .link-info-cell {
+        max-width: 90px;
+    }
+
+    .link-url {
+        max-width: 80px;
+    }
+
+    .dashboard-footer {
+        gap: 1rem !important;
+        font-size: 0.75rem !important;
     }
 }
 
