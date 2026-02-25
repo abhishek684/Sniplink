@@ -419,16 +419,16 @@ export default function PaymentGateway() {
                             <span>Subtotal</span>
                             <span>₹{originalPrice}.00</span>
                         </div>
-                        <div className="pg-summary-row">
-                            <span>GST (18%)</span>
-                            <span>{couponApplied ? '₹0.00' : `₹${(originalPrice * 0.18).toFixed(2)}`}</span>
-                        </div>
                         {couponApplied && (
                             <div className="pg-summary-row pg-discount">
                                 <span>Coupon Discount</span>
                                 <span>- ₹{originalPrice}.00</span>
                             </div>
                         )}
+                        <div className="pg-summary-row" style={{ fontSize: '0.78rem' }}>
+                            <span>Taxes & Fees</span>
+                            <span>{couponApplied ? '₹0.00' : 'Included'}</span>
+                        </div>
                         <div className="pg-summary-divider"></div>
                         <div className="pg-summary-row pg-total">
                             <span>Total</span>
